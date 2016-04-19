@@ -1,0 +1,371 @@
+
+description: Defines a collection of objects. <<defined-description>>
+get:
+  description: Returns a single <<resourcePathName>>. <<defined-get-description>>
+  headers:
+    api-message-id:
+      description: |
+        Required: A 128-bit Globally Unique Identifier (GUID) identifying for the Message Identifier
+      type: string
+      required: true
+      #minLength: 36
+      #maxLength: 36
+      pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+      example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+    api-related-id:
+      description: |
+        Optional: A 128-bit Globally Unique Identifier (GUID) identifying for the related request Message ID
+      type: string
+      required: false
+      #minLength: 36
+      #maxLength: 36
+      pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+      example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+    api-transaction-id:
+      description: |
+        Required: A 128-bit Globally Unique Identifier (GUID) identifying for the transport transaction Identifier
+      type: string
+      required: true
+      #minLength: 36
+      #maxLength: 36
+      pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+      example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+    api-transaction-timestamp:
+      description: |
+        Required: The date and time of the transaction in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+      type: string
+      required: true
+      pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+      example: !!str 2015-08-18T06:36:40+00:00
+    api-message-timestamp:
+      description: |
+        Required: The date and time of the message in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+      type: string
+      required: true
+      pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+      example: !!str 2015-08-18T06:36:40+00:00
+    api-cache-key:
+      description: |
+        Optional: Key representing the cached content within the body. Recommended that a SHA512/256 is used.
+      type: string
+      required: false
+      example: c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a
+    api-lang:
+      description: |
+        Required: language of the API User based on ISO 639-1: two-letter codes
+      type: string
+      required: true
+      example: en
+    api-country:
+      description: |
+        Required: language of the API User based on ISO 3166-1 alpha-2 – two-letter country code
+      type: string
+      required: true
+      example: za
+    api-organisation:
+      description: |
+        Required: organisation identifier
+      type: string
+      required: true
+      example: travisExample
+  responses:
+    200:
+      description: |
+        Standard response for successful HTTP requests. The actual response will depend on the request method used. In a GET request, the response will contain an entity corresponding to the requested resource. In a POST request, the response will contain an entity describing or containing the result of the action.
+      headers:
+        api-message-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the Message Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-related-id:
+          description: |
+            Optional: A 128-bit Globally Unique Identifier (GUID) identifying for the related request Message ID
+          type: string
+          required: false
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the transport transaction Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-timestamp:
+          description: |
+            Required: The date and time of the transaction in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-message-timestamp:
+          description: |
+            Required: The date and time of the message in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-cache-key:
+          description: |
+            Optional: Key representing the cached content within the body. Recommended that a SHA512/256 is used.
+          type: string
+          required: false
+          example: c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a
+        api-lang:
+          description: |
+            Required: language of the API User based on ISO 639-1: two-letter codes
+          type: string
+          required: true
+          example: en
+        api-country:
+          description: |
+            Required: language of the API User based on ISO 3166-1 alpha-2 – two-letter country code
+          type: string
+          required: true
+          example: za
+        api-organisation:
+          description: |
+            Required: organisation identifier
+          type: string
+          required: true
+          example: travisExample
+      body:
+        application/json:
+          schema: |
+            <<defined-get-response-schema>>
+          example: |
+            <<defined-get-response-example>>
+    400:
+      description: |
+        The server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing).
+      headers:
+        api-message-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the Message Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-related-id:
+          description: |
+            Optional: A 128-bit Globally Unique Identifier (GUID) identifying for the related request Message ID
+          type: string
+          required: false
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the transport transaction Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-timestamp:
+          description: |
+            Required: The date and time of the transaction in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-message-timestamp:
+          description: |
+            Required: The date and time of the message in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-cache-key:
+          description: |
+            Optional: Key representing the cached content within the body. Recommended that a SHA512/256 is used.
+          type: string
+          required: false
+          example: c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a
+        api-lang:
+          description: |
+            Required: language of the API User based on ISO 639-1: two-letter codes
+          type: string
+          required: true
+          example: en
+        api-country:
+          description: |
+            Required: language of the API User based on ISO 3166-1 alpha-2 – two-letter country code
+          type: string
+          required: true
+          example: za
+        api-organisation:
+          description: |
+            Required: organisation identifier
+          type: string
+          required: true
+          example: travisExample
+      body:
+        application/json:
+          schema: |
+            <<defined-get-exception-schema>>
+          example: |
+            <<defined-get-exception-example>>
+    404:
+      description: |
+        The requested resource could not be found but may be available again in the future. Subsequent requests by the client are permissible.
+      headers:
+        api-message-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the Message Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-related-id:
+          description: |
+            Optional: A 128-bit Globally Unique Identifier (GUID) identifying for the related request Message ID
+          type: string
+          required: false
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the transport transaction Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-timestamp:
+          description: |
+            Required: The date and time of the transaction in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-message-timestamp:
+          description: |
+            Required: The date and time of the message in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-cache-key:
+          description: |
+            Optional: Key representing the cached content within the body. Recommended that a SHA512/256 is used.
+          type: string
+          required: false
+          example: c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a
+        api-lang:
+          description: |
+            Required: language of the API User based on ISO 639-1: two-letter codes
+          type: string
+          required: true
+          example: en
+        api-country:
+          description: |
+            Required: language of the API User based on ISO 3166-1 alpha-2 – two-letter country code
+          type: string
+          required: true
+          example: za
+        api-organisation:
+          description: |
+            Required: organisation identifier
+          type: string
+          required: true
+          example: travisExample
+      body:
+        application/json:
+          schema: |
+            <<defined-get-exception-schema>>
+          example: |
+            <<defined-get-exception-example>>
+    500:
+      description: |
+        A generic error message, given when an unexpected condition was encountered and no more specific message is suitable.
+      headers:
+        api-message-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the Message Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-related-id:
+          description: |
+            Optional: A 128-bit Globally Unique Identifier (GUID) identifying for the related request Message ID
+          type: string
+          required: false
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-id:
+          description: |
+            Required: A 128-bit Globally Unique Identifier (GUID) identifying for the transport transaction Identifier
+          type: string
+          required: true
+          #minLength: 36
+          #maxLength: 36
+          pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ # UUID (GUID) v4 standard
+          example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        api-transaction-timestamp:
+          description: |
+            Required: The date and time of the transaction in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-message-timestamp:
+          description: |
+            Required: The date and time of the message in the YYYY-MM-DDThh:mm:ss+hh:mm or YYYY-MM-DDThh:mm:ss-hh:mm
+          type: string
+          required: true
+          pattern: ^(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(((\+|-)(\d{2})\:(\d{2}))|(Z))$
+          example: !!str 2015-08-18T06:36:40+00:00
+        api-cache-key:
+          description: |
+            Optional: Key representing the cached content within the body. Recommended that a SHA512/256 is used.
+          type: string
+          required: false
+          example: c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a
+        api-lang:
+          description: |
+            Required: language of the API User based on ISO 639-1: two-letter codes
+          type: string
+          required: true
+          example: en
+        api-country:
+          description: |
+            Required: language of the API User based on ISO 3166-1 alpha-2 – two-letter country code
+          type: string
+          required: true
+          example: za
+        api-organisation:
+          description: |
+            Required: organisation identifier
+          type: string
+          required: true
+          example: travisExample
+      body:
+        application/json:
+          schema: |
+            <<defined-get-exception-schema>>
+          example: |
+            <<defined-get-exception-example>>

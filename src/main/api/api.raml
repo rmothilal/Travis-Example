@@ -1,0 +1,61 @@
+
+title: travis-example
+version: 1.0
+protocols: [ HTTP, HTTPS ]
+baseUri: http://localhost:8081/api/{version}
+mediaType: application/json
+traits:
+  - dateRange: !include traits/dateRange.yaml
+  - pageeable: !include traits/pageable.yaml
+  - sortable: !include traits/sortable.yaml
+resourceTypes:
+  - collection-read-only: !include resourceTypes/collection-read-only.yaml
+  - collection: !include resourceTypes/collection.yaml
+  - collection-write-only: !include resourceTypes/collection-write-only.yaml
+  - item-read-only: !include resourceTypes/item-read-only.yaml
+  - item: !include resourceTypes/item.yaml
+  - item-allow-delete: !include resourceTypes/item-allow-delete.yaml
+  - item-write-only: !include resourceTypes/item-write-only.yaml
+  - item-update-only: !include resourceTypes/item-update-only.yaml
+  - item-process: !include resourceTypes/item-process.yaml
+#<Communication>
+/ping:
+  description: Service used to test connectivity.
+  type:
+    item-read-only:
+      defined-description: Retrieves a single ping response.
+      defined-get-description: Retrieves a single ping response.
+      defined-get-response-schema: !include schemas/ping/get-ping-response.schema.json
+      defined-get-response-example: !include examples/ping/get-ping-response.example.json
+      defined-get-exception-schema: !include schemas/exception/exception.schema.json
+      defined-get-exception-example: !include examples/exception/exception.example.json
+#</Communication>
+#<Examples>
+/item-read-only-example:
+  description: Service used to Get a single example item.
+  type:
+    item-read-only:
+      defined-description: Retrieves a single item response.
+      defined-get-description: Retrieves a single item response.
+      defined-get-response-schema: !include schemas/items/get-item-response.schema.json
+      defined-get-response-example: !include examples/items/get-item-response.example.json
+      defined-get-exception-schema: !include schemas/exception/exception.schema.json
+      defined-get-exception-example: !include examples/exception/exception.example.json
+/collection-example:
+  description: Service used to Get and Post a collection example.
+  type:
+    collection:
+      defined-description: Retrieves a single item response.
+      defined-get-description: Retrieves a collection of Items.
+      defined-get-response-schema: !include schemas/items/get-items-response.schema.json
+      defined-get-response-example: !include examples/items/get-items-response.example.json
+      defined-get-exception-schema: !include schemas/exception/exception.schema.json
+      defined-get-exception-example: !include examples/exception/exception.example.json
+      defined-post-description: Creates a single item.
+      defined-post-request-schema: !include schemas/items/post-items-request.schema.json
+      defined-post-request-example: !include examples/items/post-items-request.example.json
+      defined-post-response-schema: !include schemas/items/post-items-response.schema.json
+      defined-post-response-example: !include examples/items/post-items-response.example.json
+      defined-post-exception-schema: !include schemas/exception/exception.schema.json
+      defined-post-exception-example: !include examples/exception/exception.example.json
+#</Examples>

@@ -1,0 +1,7 @@
+
+queryParameters:
+  sortOrder:
+    description: Specify the sort order
+    required: false
+    type: string
+    enum: ["Ascending","Descending"]

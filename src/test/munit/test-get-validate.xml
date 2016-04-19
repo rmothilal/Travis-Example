@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mock="http://www.mulesoft.org/schema/mule/mock" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd">
+   <munit:config name="munit" doc:name="MUnit configuration"/>
+   <spring:beans>
+       <spring:import resource="classpath:config.xml"/>
+       <spring:import resource="classpath:get-exception.xml"/>
+       <spring:import resource="classpath:get-validate.xml"/>
+   </spring:beans>
+   <global-property name="enable.oauth.token.validation" value="true" doc:name="Global Property"/>
+   <global-property name="post.sampleresource.fortesting.oauth.scopes" value="SAMPLE-SCOPE-1,SAMPLE-SCOPE-2" doc:name="Global Property"/>
+   
+   <munit:test name="test-get-validate-TokenValidation-Success" description="Test" >
+       <mock:when messageProcessor=".*:.*" doc:name="Mock-get-validate-from-oauth2v2">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['get-validate-from-oauth2v2']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="AnythingCanBeReturnedHere">
+                <mock:inbound-properties>
+                    <mock:inbound-property key="http.status" value="200"/>
+                </mock:inbound-properties>
+            </mock:then-return>
+
+
+       </mock:when>
+        <mock:when messageProcessor=".*:.*" doc:name="Mock-Byte Array to String">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['Byte Array to String']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[getResource('./sample_data/get-validate-http-200-response.json').asString()]"/>
+
+        </mock:when>
+        <munit:set payload="ThisIsHereSoThatThePayloadIsNotEmpty" doc:name="Set Message">
+            <munit:inbound-properties>
+                <munit:inbound-property key="http.method" value="POST"/>
+                <munit:inbound-property key="http.relative.path" value="/api/1.0/sampleresource/de305d54-75b4-431b-adb2-eb6b9e546014/fortesting"/>
+                <munit:inbound-property key="authorization" value="Bearer 5zQAmZ24Jg0ozvUC+naJWSzmYiBDn6804zKu4jA0EL1teOHMAfg0HLylRI8GbQZEJIOxm+8dAHfwfhrpH+MfVQ=="/>
+            </munit:inbound-properties>
+
+        </munit:set>
+        <expression-component doc:name="Expression"><![CDATA[System.setProperty("post.sampleresource.fortesting.oauth.scopes","SAMPLE-SCOPE-1,SAMPLE-SCOPE-2");
+System.getProperties().put("post.sampleresourcefortesting.oauth.scopes","SAMPLE-SCOPE-1,SAMPLE-SCOPE-2");]]></expression-component>
+        <logger level="WARN" doc:name="test-get-validate-TokenValidation-Success::START" message="payload: #[payload], message = #[message]"/>
+<!--         <munit:set payload="#[]" doc:name="Set Message">
+           <munit:inbound-properties>
+               <munit:inbound-property key="http.relative.path" value="/api/1.0/auditlogs"/>
+               <munit:inbound-property key="http.method" value="POST"/>
+               <munit:inbound-property key="api-security-token" value="5zQAmZ24Jg0ozvUC+naJWSzmYiBDn6804zKu4jA0EL1teOHMAfg0HLylRI8GbQZEJIOxm+8dAHfwfhrpH+MfVQ=="/>
+           </munit:inbound-properties>
+       </munit:set> -->
+       <flow-ref name="get-validate-TokenValidation-SubFlow" doc:name="get-validate-TokenValidation-SubFlow"/>
+        <munit:assert-on-equals message="Response payload does not match" expectedValue="#[payload]" actualValue="#[&quot;Oauth token validation passed.&quot;]" doc:name="Assert Equals"/>
+        <logger level="WARN" doc:name="test-get-validate-TokenValidation-Success::END" message="payload: #[payload], message = #[message]"/>
+   </munit:test>
+<!--     <munit:test name="test-get-validate-TokenValidation-Fail-NoScopesDefinedInPropertiesFile" description="MUnit Test"> -->
+<!--                 <munit:set payload="ThisIsHereSoThatThePayloadIsNotEmpty" doc:name="Set Message"> -->
+<!--             <munit:inbound-properties> -->
+<!--                 <munit:inbound-property key="http.method" value="POST"/> -->
+<!--                 <munit:inbound-property key="http.relative.path" value="/api/1.0/incorrectsampleresource/de305d54-75b4-431b-adb2-eb6b9e546014/fortesting"/> -->
+<!--                 <munit:inbound-property key="api-security-token" value="5zQAmZ24Jg0ozvUC+naJWSzmYiBDn6804zKu4jA0EL1teOHMAfg0HLylRI8GbQZEJIOxm+8dAHfwfhrpH+MfVQ=="/> -->
+<!--             </munit:inbound-properties> -->
+
+<!--         </munit:set> -->
+<!--         <logger message="payload: #[payload], message = #[message]" level="WARN" doc:name="test-get-validate-TokenValidation-Fail-NoScopesDefinedInPropertiesFile::START"/> -->
+<!--         <flow-ref name="get-validate-TokenValidation-SubFlow" doc:name="get-validate-TokenValidation-SubFlow"/> -->
+<!--         <munit:assert-on-equals message="Response payload does not match" expectedValue="#[payload]" actualValue="#[getResource('./sample_data/get-validate-http-400-IllegalArgumentException.json').asString()]" doc:name="Assert Equals"/> -->
+<!--         <logger message="payload: #[payload], message = #[message]" level="WARN" doc:name="test-get-validate-TokenValidation-Fail-NoScopesDefinedInPropertiesFile::END"/> -->
+<!--     </munit:test> -->
+</mule>

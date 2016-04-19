@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "items schema",
+    "description": "schema for a generic list of items ",
+    "definitions": {
+        "sizeType": {
+            "type": "string"
+        },
+        "itemType": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "value"
+            ],
+            "additionalProperties": false
+        }
+    },
+    "type": "object",
+    "properties": {
+        "size": {
+            "$ref": "#/definitions/sizeType"
+        },
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item": {
+                        "$ref": "#/definitions/itemType"
+                    }
+                },
+                "required": [
+                    "item"
+                ],
+                "additionalProperties": false
+            }
+        }
+    }
+}

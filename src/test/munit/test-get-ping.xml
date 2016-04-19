@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:context="http://www.springframework.org/schema/context"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+    
+    <!-- Define MUnit configuration -->
+    <!-- <munit:config name="munit" doc:name="MUnit configuration"/> -->
+    <munit:config doc:name="Munit configuration" mock-connectors="false" mock-inbounds="false"/>
+    
+    <!-- Import mule flows -->
+    <spring:beans>
+<!--         <spring:import resource="classpath:api.xml"/> -->
+        <spring:import resource="classpath:get-ping.xml"/>
+        <spring:import resource="classpath:config.xml"/>
+        <spring:import resource="classpath:get-exception.xml"/>
+    </spring:beans>
+    
+    <!-- Import property files -->
+    <context:property-placeholder location="classpath:mule-app.properties" />
+
+	<!-- MUnit test flows -->
+    <munit:test name="test-get-ping-200" description="Test Get Ping operation with a 200 success">
+        <logger message="payload: #[payload], message = #[message]" level="WARN" doc:name="test-get-ping-200::START"/>
+        <munit:set payload="#[&quot;&quot;]" doc:name="Set Message"/>
+        <flow-ref name="get-ping-SubFlow" doc:name="fr.get-ping-SubFlow"/>
+        <munit:assert-on-equals expectedValue="true" actualValue="#[json:pong]" doc:name="Assert Equals"/>
+        <logger message="payload: #[payload], message = #[message]" level="WARN" doc:name="test-get-ping-200::END"/>
+    </munit:test>
+</mule>

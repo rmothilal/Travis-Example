@@ -1,0 +1,7 @@
+{
+  "scope": "SAMPLE-SCOPE-1 SAMPLE-SCOPE-2",
+  "expires_in": "86400",
+  "token_type": "bearer",
+  "client_id": "test-api",
+  "access_token": "5zQAmZ24Jg0ozvUC+naJWSzmYiBDn6804zKu4jA0EL1teOHMAfg0HLylRI8GbQZEJIOxm+8dAHfwfhrpH+MfVQ=="
+}

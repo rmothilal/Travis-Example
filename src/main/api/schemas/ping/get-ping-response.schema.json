@@ -1,0 +1,16 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "title" : "PingConnectionTestResponse",
+  "description" : "Tests connection",
+  "type" : "object",
+  "properties": {
+    "pong":  { "type": "boolean" },
+    "timestamp" : { "type": "string" },
+    "ip":  { "type": "string" },
+    "host":  { "type": "string" },
+    "api": { "type": "string" },
+    "version": { "type": "string" },
+    "build": { "type": "string" }
+  },
+  "required": [ "pong" ]
+}

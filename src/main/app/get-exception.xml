@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:request-config name="http-get-exception" host="${http.exception.host}" port="${http.exception.port}" connectionIdleTimeout="${http.exception.timeout}" responseTimeout="${http.exception.timeout}" doc:name="HTTP Request Configuration"/>
+    <choice-exception-strategy name="defaultExceptionStrategy">
+        <catch-exception-strategy when="#[exception.causedExactlyBy(java.io.IOException)]" doc:name="catch: java.io.IOException">
+            <set-variable variableName="eExceptionCode" value="${exceptionCode-IOException}" doc:name="set eExceptionCode"/>
+            <set-variable variableName="eExceptionCause" value="#[(exception.getCause()!=null)?exception.getCause().toString():'']" doc:name="set eExceptionCause"/>
+            <flow-ref name="get-exception" doc:name="get-exception"/>
+        </catch-exception-strategy>
+        <catch-exception-strategy when="#[exception.causedExactlyBy(javax.validation.ValidationException)]" doc:name="catch: javax.validation.ValidationException">
+            <set-variable variableName="eExceptionCode" value="${exceptionCode-ValidationException}" doc:name="set eExceptionCode"/>
+            <set-variable variableName="eExceptionCause" value="#[(exception.getCause()!=null)?exception.getCause().toString():'']" doc:name="set eExceptionCause"/>
+            <flow-ref name="get-exception" doc:name="get-exception"/>
+        </catch-exception-strategy>
+        <catch-exception-strategy when="#[exception.causedExactlyBy(java.net.UnknownHostException)]" doc:name="catch: java.net.UnknownHostException">
+            <set-variable variableName="eExceptionCode" value="${exceptionCode-UnknownHostException}" doc:name="set eExceptionCode"/>
+            <set-variable variableName="eExceptionCause" value="#[(exception.getCause()!=null)?exception.getCause().toString():'']" doc:name="set eExceptionCause"/>
+            <flow-ref name="get-exception" doc:name="get-exception"/>
+        </catch-exception-strategy>
+        <catch-exception-strategy when="#[exception.causedBy(java.sql.SQLException)]" doc:name="catch: java.sql.SQLException">
+            <set-variable variableName="eExceptionCode" value="${exceptionCode-SQLException}" doc:name="set eExceptionCode"/>
+            <set-variable variableName="eExceptionCause" value="#[(exception.getCause()!=null)?exception.getCause().toString():'']" doc:name="set eExceptionCause"/>
+            <flow-ref name="get-exception" doc:name="get-exception"/>
+        </catch-exception-strategy>
+        <catch-exception-strategy when="#[exception.causedBy(org.mule.api.ConnectionException) || exception.causedBy(org.mule.common.query.dsql.parser.exception.DsqlParsingException)]" doc:name="catch: org.mule.api.ConnectionException or org.mule.common.query.dsql.parser.exception.DsqlParsingException">
+            <set-variable variableName="eExceptionCode" value="${exceptionCode-ConnectionException}" doc:name="set eExceptionCode"/>
+            <set-variable variableName="eExceptionCause" value="#[(exception.getCause()!=null)?exception.getCause().toString():'']" doc:name="set eExceptionCause"/>
+            <flow-ref name="get-exception" doc:name="get-exception"/>
+        </catch-exception-strategy>
+        <catch-exception-strategy when="#[exception.causedBy(org.mule.module.apikit.exception.BadRequestException)]" doc:name="catch: org.mule.module.apikit.exception.BadRequestException">
+            <set-variable variableName="eExceptionCode" value="${exceptionCode-BadRequestException}" doc:name="set eExceptionCode"/>
+            <set-variable variableName="eExceptionCause" value="#[(exception.getCause()!=null)?exception.getCause().toString():'']" doc:name="set eExceptionCause"/>
+            <flow-ref name="get-exception" doc:name="get-exception"/>
+        </catch-exception-strategy>
+        <catch-exception-strategy  doc:name="catch: All Others">
+            <set-variable variableName="eExceptionCode" value="${exceptionCode-Other}" doc:name="set eExceptionCode"/>
+            <set-variable variableName="eExceptionCause" value="#[(exception.getCause()!=null)?exception.getCause().toString():'']" doc:name="set eExceptionCause"/>
+            <flow-ref name="get-exception" doc:name="get-exception"/>
+        </catch-exception-strategy>
+    </choice-exception-strategy>
+    <sub-flow name="get-exception">
+        <logger message="#[(exception != null &amp;&amp; exception.getCause() != null) ? exception.getCause().toString() : 'An error has occured but the cause is indeterminable.']" level="ERROR" doc:name="get-exception::START"/>
+        <set-variable variableName="eLanguageCode" value="#[(((sessionVars.lang == null)? (flowVars.eLanguageCode !=null)? flowVars.eLanguageCode ; null) ; sessionVars.lang)]" doc:name="set-eLanguageCode"/>
+        <set-payload value="{}" doc:name="set-empty-json-payload"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-variable variableName="exceptionQueryParams"><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	(languageCode: flowVars.eLanguageCode default inboundProperties.api-lang) when (flowVars.eLanguageCode? or inboundProperties.api-lang?),
+	(exceptionId: flowVars.eExceptionId) when (flowVars.eExceptionId?),
+	(exceptionCode: flowVars.eExceptionCode) when (flowVars.eExceptionCode?),
+	(context: flowVars.eContext) when (flowVars.eContext?),
+	(exceptionName: flowVars.eExceptionName) when (flowVars.eExceptionName?),
+	(sourceExceptionCode: flowVars.eSourceExceptionCode) when (flowVars.eSourceExceptionCode?),
+	(sourceExceptionName: flowVars.eSourceExceptionName) when (flowVars.eSourceExceptionName?),
+	(sourceSystem: flowVars.eSourceSystem) when (flowVars.eSourceSystem?)
+	
+}]]></dw:set-variable>
+        </dw:transform-message>
+        <message-properties-transformer doc:name="set headers">
+            <add-message-property key="Content-Type" value="application/json"/>
+            <add-message-property key="api-message-id" value="#[message:id]"/>
+            <add-message-property key="api-related-id" value="#[message.inboundProperties['api-message-id'] != null ? message.inboundProperties['api-message-id'] : &quot;&quot;]"/>
+            <add-message-property key="api-transaction-id" value="#[message.inboundProperties['api-transaction-id'] != null ? message.inboundProperties['api-transaction-id'] : &quot;&quot;]"/>
+            <add-message-property key="api-transaction-timestamp" value="#[message.inboundProperties['api-transaction-timestamp'] != null ? message.inboundProperties['api-transaction-timestamp'] : &quot;&quot;]"/>
+            <add-message-property key="api-message-timestamp" value="#[message.inboundProperties['api-message-timestamp'] != null ? message.inboundProperties['api-message-timestamp'] : &quot;&quot;]"/>
+            <add-message-property key="api-lang" value="#[message.inboundProperties['api-lang'] != null ? message.inboundProperties['api-lang'] : &quot;&quot;]"/>
+            <add-message-property key="api-country" value="#[message.inboundProperties['api-country'] != null ? message.inboundProperties['api-country'] : &quot;&quot;]"/>
+            <add-message-property key="api-organisation" value="#[message.inboundProperties['api-organisation'] != null ? message.inboundProperties['api-organisation'] : &quot;&quot;]"/>
+        </message-properties-transformer>
+        <http:request config-ref="http-get-exception" path="${http.exception.path}" method="GET" doc:name="invoke get exception">
+            <http:request-builder>
+                <http:query-params expression="#[flowVars['exceptionQueryParams']]"/>
+            </http:request-builder>
+            <http:success-status-code-validator values="200,404"/>
+        </http:request>
+        <choice doc:name="check exception framework result">
+            <when expression="#[message.inboundProperties['http.status'] == '404']">
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+    "size": 1,
+    "exceptions": [
+        {
+            "exceptionId": "NULL",
+            "httpCode": "500",
+            "exceptionCode": "UnhandledExceptions-NOT-IN-DATASTORE",
+            "exceptionName": "Other unexpected and unspecified exception",
+            "exceptionLanguageMessages": {
+                "en": "An unexpected exception occured and then the Exception Framework could not resolve the error using the query parameters that were provided. Create a new exception object in the Exception Datastore that match the filters that were provided or check that the filters that were provided are correct."
+            },
+            "sourceSystem": "Mule",
+            "sourceExceptionCode": "Mule-001",
+            "sourceExceptionName": "error",
+            "context": "Auditing",
+            "active": true,
+            "createdTime": now as :datetime {format: "yyyy-MM-dd'T'HH:mm:ssXXX"},
+            "createdByUser": "mule",
+            "updatedTime": now as :datetime {format: "yyyy-MM-dd'T'HH:mm:ssXXX"},
+            "updatedByUser": "mule"
+        }
+    ]
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+            </when>
+            <otherwise>
+                <byte-array-to-string-transformer doc:name="byte array to string"/>
+            </otherwise>
+        </choice>
+<!--         <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="json to object"/> -->
+        <message-properties-transformer doc:name="set response status code">
+            <add-message-property key="http.status" value="#[(payload.exceptions != null &amp;&amp; payload.exceptions.length &gt; 0) ? ((payload.exceptions[0].httpCode != null)? payload.exceptions[0].httpCode | '500') : '500']"/>
+        </message-properties-transformer>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:input-payload doc:sample="get-exception-response-200.json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/json
+%output application/json skipNullOn="everywhere"
+---
+{
+	exception: {
+		correlationId: inboundProperties.api-message-id,
+		exceptionCode: payload.exceptions[0].exceptionCode,
+		httpCode: payload.exceptions[0].httpCode,
+		timeStamp: now as :datetime {format: "yyyy-MM-dd'T'HH:mm:ssXXX"},
+		message: payload.exceptions[0].exceptionLanguageMessages[?($.key == "en")][0].value,
+		(causes: [
+			{
+				cause: flowVars.eExceptionCause
+			}
+		]) when (flowVars.eExceptionCause?)
+	}
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <logger message="#[(exception != null &amp;&amp; exception.getCause() != null) ? exception.getCause().toString() : 'An error has occured but the cause is indeterminable.']" level="ERROR" doc:name="get-exception::END"/>
+<!--         <parse-template location="exceptionResponseTemplate.json" doc:name="format result"/> -->
+    </sub-flow>
+</mule>

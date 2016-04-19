@@ -1,0 +1,13 @@
+{
+  "exception": {
+    "correlationId": "71afa501-b0be-457f-a86e-6d87d19dd52e",
+    "exceptionCode": "Travis-001",
+    "httpCode": "500",
+    "timeStamp": "2016-01-03T21:45:26+02:00",
+    "causes": [
+      {
+        "cause": "java.lang.IllegalArgumentException: Scopes have not been defined in the properties file."
+      }
+    ]
+  }
+}

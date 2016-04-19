@@ -1,0 +1,41 @@
+{
+    "httpRequest": {
+        "method": "GET",
+        "path": "/api/1.0/ping",
+        "headers": [
+        ]
+    },
+    "httpResponse": {
+        "statusCode": 404,
+        "headers": [
+            {
+                "name": "Content-Type",
+                "values" : [ "application/json" ]
+            },
+            {
+                "name": "api-message-id",
+                "values" : [ "71afa501-b0be-457f-a86e-6d87d19dd52e" ]
+            },
+            {
+                "name": "api-related-id",
+                "values" : [ "f47ac10b-58cc-4372-a567-0e02b2c3d479" ]
+            },
+            {
+                "name": "api-correlation-id",
+                "values" : [ "3d72a954-2c8e-49ee-a959-2f4e110e3425" ]
+            },
+            {
+                "name": "api-transaction-timestamp",
+                "values" : [ "2015-08-18T06:36:40Z" ]
+            },
+            {
+                "name": "api-message-timestamp",
+                "values" : [ "2015-08-18T06:36:40Z" ]
+            }
+        ],
+        "body": "{\n\"exception\":{\"correlationId\":\"23e40985-451a-4e4f-b605-5ce7a8d181bf\",\n\"httpCode\":404,\n\"timeStamp\":\"2012-04-23T18:25:43.511Z\",\n\"message\":\"exceptionmessage\",\n\"causes\":[\n{\n\"cause\":{\n\"detail\":\"exceptiondetails\"\n}\n}\n]\n}\n}"
+    },
+    "times": {
+        "unlimited": true
+    }
+}

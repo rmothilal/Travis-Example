@@ -1,0 +1,110 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExceptionMessage",
+    "description": "A schema defining a travisExample exception message",
+    "definitions": {
+        "correlationId": {
+            "description": "A 128-bit Globally Unique Identifier (GUID) of an exception message that is output and corresponds to the processId of the calling process that requested the exception message",
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "httpCode": {
+            "description": "The IETF HTTP status code that is assigned to the exception message. -1 for other.",
+            "enum": [
+                400,
+                403,
+                404,
+                405,
+                406,
+                409,
+                410,
+                500,
+                501,
+                503,
+                -1
+            ]
+        },
+        "exceptionCode": {
+            "description": "The provider exception code that is assigned to the exception message.",
+            "type": "string"
+        },
+        "timeStamp": {
+            "description": "The date and time that the exception message was generated in the ISO8601 format of YYYY-MM-DDThh:mm:ssZ in UTC time",
+            "type": "string",
+            "format": "date-time"
+        },
+        "message": {
+            "description": "The generated exception message in the requested language",
+            "type": "string"
+        },
+        "causedetail": {
+            "description": "The detailed cause message which may be a stack trace or a raw exception message",
+            "type": "string"
+        },
+        "cause": {
+            "type" : "object",
+            "properties": {
+                "detail": {
+                    "$ref": "#/definitions/causedetail"
+                }
+            },
+            "required": [
+                "detail"
+            ],
+            "additionalProperties" :false
+        },
+        "outputExceptionMessage": {
+            "type": "object",
+            "properties": {
+                "exception": {
+                    "type": "object",
+                    "properties": {
+                        "correlationId": {
+                            "$ref": "#/definitions/correlationId"
+                        },
+                        "httpCode": {
+                            "$ref": "#/definitions/httpCode"
+                        },
+                        "exceptionCode": {
+                            "$ref": "#/definitions/exceptionCode"
+                        },
+                        "timeStamp": {
+                            "$ref": "#/definitions/timeStamp"
+                        },
+                        "message": {
+                            "$ref": "#/definitions/message"
+                        },
+                        "causes": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "cause": {
+                                        "$ref": "#/definitions/cause"
+                                    }
+                                },
+                                "required": [
+                                    "cause"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "correlationId",
+                        "exceptionCode",
+                        "timeStamp",
+                        "message"
+                    ]
+                }
+            },
+            "required": [
+                "exception"
+            ]
+        }
+    },
+    "oneOf": [
+        {
+            "$ref": "#/definitions/outputExceptionMessage"
+        }
+    ]
+}

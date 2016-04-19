@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd" >
+    <http:listener-config name="api-httpListenerConfig" host="${api.host.ip}" port="${api.host.port}" doc:name="HTTP Listener Configuration" />
+    <apikit:config name="api-config" raml="api.raml" consoleEnabled="true" consolePath="console" doc:name="Router" />
+
+    <flow name="api-main">
+        <http:listener config-ref="api-httpListenerConfig" path="api/${api.version}/*" doc:name="HTTP" />
+        <message-properties-transformer overwrite="true" scope="invocation" doc:name="set-flowVars-perf-START">
+            <add-message-property key="api.STEP_START_TIME_MS" value="#[server.dateTime.toDate().getTime()]" />
+            <add-message-property key="api.STEP_MESSAGE" value="#['api']" />
+        </message-properties-transformer>
+        <byte-array-to-string-transformer ignoreBadInput="true" encoding="UTF-8" mimeType="application/json" doc:name="ByteArray-to-JSON-UTF8-Format" />
+        <set-session-variable variableName="MULE_CORRELATION_ID" value="#[((message.inboundProperties['MULE_CORRELATION_ID'] != null)? message.inboundProperties['MULE_CORRELATION_ID']:message.Id)]" doc:name="set-sessionVar-correlation-Id" />
+        <set-session-variable variableName="lang" value="#[((message.inboundProperties['api-lang'] != null)? message.inboundProperties['api-lang']:message.Id)]" doc:name="set-sessionVar-api-lang"/>
+        <expression-component doc:name="expression-clear-ssl-properties"><![CDATA[#[System.clearProperty("javax.net.ssl.trustStore"); System.clearProperty("javax.net.ssl.trustStorePassword"); System.clearProperty("javax.net.ssl.trustManagerAlgorithm"); System.clearProperty("javax.net.ssl.trustStoreType");]]]></expression-component>
+        <set-variable variableName="logstage" value="api::START" doc:name="set-flowVar-logStage-Start" />
+        <flow-ref name="log-SubFlow" doc:name="fr.log-SubFlow.Start" />
+        <choice doc:name="Choice">
+            <when expression="#[(new String(&quot;options&quot;)).equalsIgnoreCase(message.inboundProperties['http.method'])]">
+                <flow-ref name="process-CORS-response-SubFlow" doc:name="fr.process-CORS-response-SubFlow" />
+            </when>
+            <otherwise>
+                <apikit:router config-ref="api-config" doc:name="APIkit Router" />
+            </otherwise>
+        </choice>
+        <flow-ref name="set-Common-Outbound-Headers-SubFlow" doc:name="fr.set-Common-Outbound-Headers-SubFlow" />
+        <set-variable variableName="logstage" value="api::END" doc:name="set-flowVar-logStage-End" />
+        <flow-ref name="log-SubFlow" doc:name="fr.log-SubFlow.End" />
+        <logger message="#['Output Logger for : '+flowVars['api.STEP_MESSAGE']+' id['+sessionVars['MULE_CORRELATION_ID'] +'] startDate['+ new java.util.Date(flowVars['api.STEP_START_TIME_MS']) + '] start['+flowVars['api.STEP_START_TIME_MS']+'] time['+(server.dateTime.toDate().getTime() - flowVars['api.STEP_START_TIME_MS'])+']'] tag[#[flowVars['api.STEP_MESSAGE']]]" level="DEBUG" doc:name="log-perf-End" />
+        <exception-strategy ref="defaultExceptionStrategy" doc:name="Reference Exception Strategy" />
+    </flow>
+    <sub-flow name="set-Common-Outbound-Headers-SubFlow">
+        <message-properties-transformer doc:name="set_outbound_headers" doc:description="Access-Control-Allow-* headers are for CORS Access Control">
+            <add-message-property key="Access-Control-Allow-Origin" value="*" />
+            <add-message-property key="Access-Control-Allow-Methods" value="${api.access_control.allow_methods}" />
+            <add-message-property key="Access-Control-Allow-Headers" value="Cache-Control, accept, Pragma, Origin, Authorization, Content-Type, X-Requested-With" />
+            <add-message-property key="Access-Control-Allow-Credentials" value="true" />
+            <add-message-property key="MULE_CORRELATION_ID" value="#[sessionVars['MULE_CORRELATION_ID']]" />
+        </message-properties-transformer>
+    </sub-flow>
+    <sub-flow name="process-CORS-response-SubFlow">
+        <logger message="process_CORS_response_SubFlow::Start - Incoming requests is a CORS Preflight handshake!" level="DEBUG" doc:name="log_START" />
+        <set-property propertyName="Content-Type" value="application/json" doc:name="set_property_Content-Type" />
+        <set-property propertyName="http.status" value="200" doc:name="set_property_http_status" />
+        <logger message="process_CORS_response_SubFlow::End - Incoming requests is a CORS Preflight handshake!" level="DEBUG" doc:name="log_END" />
+    </sub-flow>
+    <sub-flow name="log-SubFlow">
+        <async doc:name="Async">
+            <logger message="#[flowVars['logstage']] -- Message ID : #[sessionVars['MULE_CORRELATION_ID']] -- message:: #[message] -- payload:: #[payload]" level="INFO" doc:name="logPayload" />
+        </async>
+    </sub-flow>
+    <sub-flow name="preProcessingSubFlow">
+        <enricher target="#[flowVars.Oauth2Result]" doc:name="Message Enricher">
+            <ee:cache cachingStrategy-ref="OAUTHCaching_Strategy" doc:name="Cache">
+                <flow-ref name="get-validate-TokenValidation-SubFlow" doc:name="fr.get-validate-TokenValidation-SubFlow"/>
+            </ee:cache>
+        </enricher>
+        <flow-ref name="get-oauth2v2tokenFlow" doc:name="fr.get-oauth2v2tokenFlow"/>
+    </sub-flow>
+    <flow name="get:/ping:api-config">
+        <flow-ref name="get-ping-SubFlow" doc:name="fr.get-ping.get-ping-SubFlow" />
+    </flow>
+    <flow name="get:/collection-example:api-config">
+        <set-payload value="{
+  &quot;size&quot; : &quot;2&quot;,
+  &quot;items&quot; :
+  [
+    {
+      &quot;name&quot;: &quot;this is an item 1&quot;,
+      &quot;value&quot;: &quot;this is value for item 1&quot;
+    },
+    {
+      &quot;name&quot;: &quot;this is an item 2&quot;,
+      &quot;value&quot;: &quot;this is value for item 2
+    }
+  ]
+}" doc:name="set-payload" />
+    </flow>
+    <flow name="get:/item-read-only-example:api-config">
+    	<flow-ref name="preProcessingSubFlow" doc:name="fr.preProcessingSubFlow"/>
+        <set-payload value="{
+    &quot;name&quot;: &quot;this is an item&quot;,
+    &quot;value&quot;: &quot;this is value for this item&quot;
+}" doc:name="set-payload" />
+    </flow>
+    <flow name="post:/collection-example:application/json:api-config">
+        <set-payload value="{
+  &quot;result&quot; : &quot;success&quot;
+}" doc:name="set-payload" />
+    </flow>
+    <apikit:mapping-exception-strategy name="api-apiKitGlobalExceptionMapping">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="set-Content-Type-Property" />
+            <set-variable variableName="apiKitException" value="Resource not found" doc:name="set-flowVar-apiKitException" mimeType="text/plain"/>
+            <set-variable variableName="apiKitHttpCode" value="404" doc:name="set-flowVar-apiKitHttpCode" mimeType="text/plain"/>
+            <set-variable variableName="apiKitExceptionCode" value="INTEROP-APIKIT-404" doc:name="set-flowVar-apiKitExceptionCode" mimeType="text/plain"/>
+            <flow-ref name="set-APIKit-Exception-SubFlow" doc:name="fr.set-APIKit-Exception-SubFlow" />
+            <flow-ref name="set-Common-Outbound-Headers-SubFlow" doc:name="fr.set-Common-Outbound-Headers-SubFlow" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="set-Content-Type-Property" />
+            <set-variable variableName="apiKitException" value="Method not allowed" doc:name="set-flowVar-apiKitException" mimeType="text/plain"/>
+            <set-variable variableName="apiKitHttpCode" value="405" doc:name="set-flowVar-apiKitHttpCode" mimeType="text/plain"/>
+            <set-variable variableName="apiKitExceptionCode" value="INTEROP-APIKIT-405" doc:name="set-flowVar-apiKitExceptionCode" mimeType="text/plain"/>
+            <flow-ref name="set-APIKit-Exception-SubFlow" doc:name="fr.set-APIKit-Exception-SubFlow" />
+            <flow-ref name="set-Common-Outbound-Headers-SubFlow" doc:name="fr.set-Common-Outbound-Headers-SubFlow" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="415">
+            <apikit:exception value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="set-Content-Type-Property" />
+            <set-variable variableName="apiKitException" value="Unsupported media type" doc:name="set-flowVar-apiKitException" mimeType="text/plain"/>
+            <set-variable variableName="apiKitHttpCode" value="415" doc:name="set-flowVar-apiKitHttpCode" mimeType="text/plain"/>
+            <set-variable variableName="apiKitExceptionCode" value="INTEROP-APIKIT-415" doc:name="set-flowVar-apiKitExceptionCode" mimeType="text/plain"/>
+            <flow-ref name="set-APIKit-Exception-SubFlow" doc:name="fr.set-APIKit-Exception-SubFlow" />
+            <flow-ref name="set-Common-Outbound-Headers-SubFlow" doc:name="fr.set-Common-Outbound-Headers-SubFlow" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="406">
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="set-Content-Type-Property" />
+            <set-variable variableName="apiKitException" value="Not acceptable" doc:name="set-flowVar-apiKitException" mimeType="text/plain"/>
+            <set-variable variableName="apiKitHttpCode" value="406" doc:name="set-flowVar-apiKitHttpCode" mimeType="text/plain"/>
+            <set-variable variableName="apiKitExceptionCode" value="INTEROP-APIKIT-406" doc:name="set-flowVar-apiKitExceptionCode" mimeType="text/plain"/>
+            <flow-ref name="set-APIKit-Exception-SubFlow" doc:name="fr.set-APIKit-Exception-SubFlow" />
+            <flow-ref name="set-Common-Outbound-Headers-SubFlow" doc:name="fr.set-Common-Outbound-Headers-SubFlow" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="400">
+            <apikit:exception value="org.mule.module.apikit.exception.BadRequestException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="set-Content-Type-Property" />
+            <set-variable variableName="apiKitException" value="Bad Request" doc:name="set-flowVar-apiKitException" mimeType="text/plain"/>
+            <set-variable variableName="apiKitHttpCode" value="400" doc:name="set-flowVar-apiKitHttpCode" mimeType="text/plain"/>
+            <set-variable variableName="apiKitExceptionCode" value="INTEROP-APIKIT-400" doc:name="set-flowVar-apiKitExceptionCode" mimeType="text/plain"/>
+            <flow-ref name="set-APIKit-Exception-SubFlow" doc:name="fr.set-APIKit-Exception-SubFlow" />
+            <flow-ref name="set-Common-Outbound-Headers-SubFlow" doc:name="fr.set-Common-Outbound-Headers-SubFlow" />
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+    <sub-flow name="set-APIKit-Exception-SubFlow">
+        <set-variable variableName="varApiKitException" value="#[&quot;&quot;+flowVars['apiKitException']]" doc:name="set-varApiKitException"/>
+        <set-variable variableName="varApiKitExceptionCode" value="#[&quot;&quot;+flowVars['apiKitExceptionCode']]" doc:name="set-varApiKitExceptionCode"/>
+        <set-variable variableName="varApiKitHttpCode" value="#[&quot;&quot;+flowVars['apiKitHttpCode']]" doc:name="set-varApiKitHttpCode"/>
+<!--         <set-payload value="{ -->
+<!--  &quot;exception&quot;: { -->
+<!--   &quot;correlationId&quot;: &quot;#[(sessionVars['MULE_CORRELATION_ID'] != null)?sessionVars['MULE_CORRELATION_ID']:null]&quot;, -->
+<!--   &quot;httpCode&quot;: &quot;#[(message.inboundProperties['http.method']!=null)?message.inboundProperties['http.method'].toLowerCase():null]&quot;, -->
+<!--   &quot;timeStamp&quot;: &quot;#[new java.util.Date(server.dateTime.toDate().getTime())]&quot;, -->
+<!--   &quot;message&quot;: &quot;#[flowVars['apiKitException']]&quot; -->
+<!-- }}" doc:name="set-payload-exception" /> -->
+        <dw:transform-message doc:name="Transform Message">
+                    <dw:input-payload doc:sample="exception.example.json"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/json
+%output application/json
+%var message=flowVars.varApiKitException as :string
+%var exceptionCode=flowVars.varApiKitExceptionCode as :string
+%var httpCode=flowVars.varApiKitHttpCode as :string
+---
+{
+    "exception": {
+        "correlationId": inboundProperties.api-message-id default sessionVars.MULE_CORRELATION_ID,
+        "exceptionCode":exceptionCode,
+        "httpCode": httpCode,
+		"timeStamp": now as :datetime {format: "yyyy-MM-dd'T'HH:mm:ssXXX"},
+        "message": "Integration APIKit Error - " ++ message,
+        ("causes": [
+			{
+				"cause": {
+					"detail": using (
+						providerCorrelationId=payload.exception.correlationId default "",
+						providerHttpCode=payload.exception.httpCode default "",
+						providerExceptionCode=payload.exception.exceptionCode default "",
+						providerTimeStamp=payload.exception.timeStamp default "",
+						providerMessage=payload.exception.message default ""
+					) "[correlationId=$providerCorrelationId, httpCode=$providerHttpCode, exceptionCode=$providerExceptionCode, timeStamp=$providerTimeStamp, message=$providerMessage]"
+				}
+			}
+		]) when (payload.exception?)
+    }
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+    </sub-flow>
+
+</mule>

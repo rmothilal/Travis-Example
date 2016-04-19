@@ -1,0 +1,16 @@
+{
+    "exception": {
+        "correlationId": "23e40985-451a-4e4f-b605-5ce7a8d181bf",
+        "httpCode": 400,
+        "exceptionCode": "INT1234",
+        "timeStamp": "2012-04-23T18:25:43.511Z",
+        "message": "exception message - 400",
+        "causes": [
+            {
+                "cause": {
+                    "detail": "exception details - 400"
+                }
+            }
+        ]
+    }
+}

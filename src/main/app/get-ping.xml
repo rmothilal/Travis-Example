@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+    <sub-flow name="get-ping-SubFlow">
+       	<message-properties-transformer overwrite="true" scope="invocation" doc:name="setFlowVarsPerfStart">
+            <add-message-property key="get_pingSub_Flow.STEP_MESSAGE" value="#['get-ping.get_pingSub_Flow']"/>
+            <add-message-property key="get_pingSub_Flow.STEP_START_TIME_MS" value="#[server.dateTime.toDate().getTime()]"/>
+        </message-properties-transformer>
+        <set-payload value="{&#xA; &quot;pong&quot; : true,&#xA; &quot;timestamp&quot;: &quot;#[server.dateTime]&quot;,&#xA; &quot;ip&quot; : &quot;#[server.ip]&quot;,&#xA; &quot;ip&quot; : &quot;#[server.host]&quot;,&#xA; &quot;api&quot;: &quot;${api.name}&quot;,&#xA; &quot;version&quot; : &quot;${api.version}&quot;,&#xA; &quot;build&quot; : &quot;${api.build}&quot;&#xA;}" doc:name="setPayloadPong"/>
+        <logger message="#['Output Logger for : '+flowVars['get_pingSub_Flow.STEP_MESSAGE']+' id['+sessionVars['MULE_CORRELATION_ID'] +'] startDate['+ new java.util.Date(flowVars['get_pingSub_Flow.STEP_START_TIME_MS']) + '] start['+flowVars['get_pingSub_Flow.STEP_START_TIME_MS']+'] time['+(server.dateTime.toDate().getTime() - flowVars['get_pingSub_Flow.STEP_START_TIME_MS'])+']'] tag[#[flowVars['get_pingSub_Flow.STEP_MESSAGE']]]" level="DEBUG" doc:name="logPerfEnd"/>
+    </sub-flow>
+</mule>

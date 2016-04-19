@@ -1,0 +1,62 @@
+sudo: false #configure latest travis container environment
+language: java
+jdk:
+  - oraclejdk8
+#
+cache:
+  directories:
+    - $HOME/.m2/repository
+
+install:
+  - export BUILD_INFO=$TRAVIS_BRANCH-$TRAVIS_BUILD_ID-$TRAVIS_BUILD_NUMBER-$(git rev-parse HEAD)
+  - git clone -b $GIT_CI_DOCKER_BRANCH https://$GIT_USERNAME:$GIT_PASSWORD@github.com/Travis-Example/$GIT_CI_DOCKER.git ~/Travis-Example/$GIT_CI_DOCKER
+  - rm -rf ~/Travis-Example/$GIT_CI_DOCKER/.git
+  - mkdir ~/Travis-Example/tmp
+  - curl -sL https://s3.amazonaws.com/ddbfileshare/build-tools/maven/mule-settings4trvs.xml > ~/Travis-Example/tmp/settings4trvs.xml
+  - sed -e 's|\[MVN_DDB_USERNAME\]|'$MVN_DDB_USERNAME'|' -e 's|\[MVN_DDB_PASSWORD\]|'$MVN_DDB_PASSWORD'|' ~/Travis-Example/tmp/settings4trvs.xml > ~/Travis-Example/tmp/settings.xml
+  - rm ~/Travis-Example/tmp/settings4trvs.xml
+  - export DEPL_ENV="bad-branch"
+  - if [[ "$TRAVIS_BRANCH" == "develop" ]]; then export DEPL_ENV="dev"; fi
+  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then export DEPL_ENV="prd"; fi
+  - if [[ "$DEPL_ENV" != "bad-branch" ]]; then sed -e 's|\[api.build\]|'$BUILD_INFO'|' -e 's|\[MULE_PORT\]|'$MULE_PORT'|' ./src/main/app/mule-app-$DEPL_ENV.properties > ./src/main/app/mule-app.properties; fi
+  - rm ./src/main/app/mule-app-*.properties
+  - travis_wait mvn install -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true $MVN_PARAMS_INSTALL -DskipTests=true -Dmaven.javadoc.skip=true -B -V --settings ~/Travis-Example/tmp/settings.xml
+#
+before_script: 
+  - echo TRAVIS_BUILD_NUMBER= $TRAVIS_BUILD_NUMBER
+  - echo BUILD_INFO= $BUILD_INFO
+  - echo DEPL_ENV= $DEPL_ENV
+#
+script: 
+  - mvn -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true $MVN_PARAMS_SCRIPT clean package --settings ~/Travis-Example/tmp/settings.xml
+#
+#after_success: 
+#  -
+#
+#before_deploy:
+#  -
+#
+after_success:
+- cp ./target/$BUILD_ARTIFACT ~/Travis-Example/$GIT_CI_DOCKER/
+- cd ~/Travis-Example/$GIT_CI_DOCKER/
+- sed -e 's|\[MULE_PORT\]|'$MULE_PORT'|' -e 's|\[DOCKER_IMAGE\]|'$DOCKER_IMAGE'|' ~/Travis-Example/$GIT_CI_DOCKER/Dockerrun.aws.json > ~/Travis-Example/$GIT_CI_DOCKER/Dockerrun.aws.json_temp
+- mv ~/Travis-Example/$GIT_CI_DOCKER/Dockerrun.aws.json_temp ~/Travis-Example/$GIT_CI_DOCKER/Dockerrun.aws.json
+- sed -e 's|\[MULE_PORT\]|'$MULE_PORT'|' -e 's|\[MULE_DEBUG_PORT\]|'$MULE_DEBUG_PORT'|' -e 's|\[MULE_JMX_PORT\]|'$MULE_JMX_PORT'|' -e 's|\[MULE_MMC_PORT\]|'$MULE_MMC_PORT'|' -e 's/\[MULE_VERSION\]/'$MULE_VERSION'/' -e 's|\[DOCKER_IMAGE\]|'$DOCKER_IMAGE'|' -e 's/\[AWS_ACCESS_KEY_ID\]/'$AWS_ACCESS_KEY_ID'/' -e 's/\[AWS_SECRET_ACCESS_KEY\]/'$AWS_SECRET_ACCESS_KEY'/' -e 's|\[BUILD_INFO\]|'$BUILD_INFO'|' -e 's|\[JAVA_VERSION_MAJOR\]|'$JAVA_VERSION_MAJOR'|' -e 's|\[JAVA_VERSION_MINOR\]|'$JAVA_VERSION_MINOR'|' -e 's|\[JAVA_VERSION_BUILD\]|'$JAVA_VERSION_BUILD'|' -e 's/\[BUILD_ARTIFACT\]/'$BUILD_ARTIFACT'/' ~/Travis-Example/$GIT_CI_DOCKER/Dockerfile > ~/Travis-Example/$GIT_CI_DOCKER/Dockerfile_temp
+- mv ~/Travis-Example/$GIT_CI_DOCKER/Dockerfile_temp ~/Travis-Example/$GIT_CI_DOCKER/Dockerfile
+- zip -r ~/Travis-Example/eb-docker.zip Dockerfile Dockerrun.aws.json .ebextensions $BUILD_ARTIFACT
+- cd ~/Travis-Example
+#
+deploy:
+  - provider: elasticbeanstalk
+    skip-cleanup: true
+    access-key-id: $AWS_ACCESS_KEY_ID
+    secret-access-key: $AWS_SECRET_ACCESS_KEY
+    region: eu-west-1
+    app: $DEPLOY_EB_APP_DEV
+    env: $DEPLOY_EB_ENV_DEV
+    bucket_name: travis
+    bucket_path: $DEPLOY_EB_APP_DEV
+    zip-file: eb-docker.zip
+    on:
+      branch: develop
+#end of file

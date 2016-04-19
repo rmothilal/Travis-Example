@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+<http:request-config name="HTTP_Oauth_Configuration" host="${http.oauth2v2.host}" port="${http.oauth2v2.port}" basePath="${http.oauth2v2.base.path}" connectionIdleTimeout="${http.oauth2v2.timeout.connection}" responseTimeout="${http.oauth2v2.timeout}" doc:name="HTTP Request Configuration"/>
+
+<sub-flow name="get-validate-TokenValidation-SubFlow">
+        <set-variable variableName="ExecuteOauthTokenValidation" value="${enable.oauth.token.validation}" doc:name="set-var-ExecuteOauthTokenValidation"/>
+        <set-variable variableName="StoredTokenFromInboundHeader" value="#[message.inboundProperties.'authorization']" doc:name="set-var-StoredTokenFromInboundHeader"/>
+        <choice doc:name="Choice">
+            <when expression="#[flowVars.ExecuteOauthTokenValidation==&quot;true&quot; &amp;&amp; flowVars.StoredTokenFromInboundHeader!=null]">
+                <set-variable variableName="ScopeVariableArrayDerivedFromPath" value="#[message.inboundProperties.'http.relative.path'.replaceAll(&quot;^/api/[0-9]+.[0-9]+/&quot;,&quot;&quot;).split(&quot;/&quot;)]" doc:name="set-var-ScopeVariableArrayDerivedFromPath"/>
+                <set-variable variableName="OauthEnvironmentVariableScopes" value="#[flowVars.ScopeVariableArrayDerivedFromPath.size() &lt;= 2 ? (message.inboundProperties.'http.method'.toLowerCase() + &quot;.&quot; + flowVars.ScopeVariableArrayDerivedFromPath[0] + &quot;.oauth.scopes&quot;) : flowVars.ScopeVariableArrayDerivedFromPath.size() &gt;= 3 ? (message.inboundProperties.'http.method'.toLowerCase() + &quot;.&quot; + flowVars.ScopeVariableArrayDerivedFromPath[0] + &quot;.&quot; + flowVars.ScopeVariableArrayDerivedFromPath[2]) + &quot;.oauth.scopes&quot;]" doc:name="set-var-OauthEnvironmentVariableScopes"/>
+<!--                 <logger message="#[&quot;server.systemProperties=&quot;+server.systemProperties +&quot;\n&quot;+${get.parties.oauth.scopes}+&quot;\n&quot;] get.parties.oauth.scopes=${#[flowVars['OauthEnvironmentVariableScopes']}" level="INFO" doc:name="SERVEROPROPERTIES"/> -->
+                <set-variable variableName="ScopeToRetrieve" value="#[app.registry.get(flowVars['OauthEnvironmentVariableScopes'])!=empty?app.registry.get(flowVars['OauthEnvironmentVariableScopes']):&quot;NO SCOPES DEFINED&quot;]" doc:name="set-var-ScopeToRetrieve"/>
+                <choice doc:name="Choice">
+                    <when expression="#[flowVars.ScopeToRetrieve!=&quot;NO SCOPES DEFINED&quot;]">
+                        <set-variable variableName="RequiredScopes" value="#[new ArrayList(Arrays.asList(flowVars.ScopeToRetrieve.split(&quot;,&quot;)))]" doc:name="set-var-RequiredScopes"/>
+                        <message-properties-transformer doc:name="Set Headers">
+                            <add-message-property key="Content-Type" value="application/json"/>
+                            <add-message-property key="api-message-id" value="#[message:id]"/>
+                            <add-message-property key="api-related-id" value="#[message.inboundProperties['api-message-id'] != null ? message.inboundProperties['api-message-id'] : &quot;&quot;]"/>
+                            <add-message-property key="api-transaction-id" value="#[message.inboundProperties['api-transaction-id'] != null ? message.inboundProperties['api-transaction-id'] : &quot;&quot;]"/>
+                            <add-message-property key="api-transaction-timestamp" value="#[message.inboundProperties['api-transaction-timestamp'] != null ? message.inboundProperties['api-transaction-timestamp'] : &quot;&quot;]"/>
+                            <add-message-property key="api-message-timestamp" value="#[server.dateTime.format(&quot;yyyy-MM-dd'T'HH:mm:ssXXX&quot;)]"/>
+                            <add-message-property key="api-lang" value="#[message.inboundProperties['api-lang'] != null ? message.inboundProperties['api-lang'] : &quot;&quot;]"/>
+                            <add-message-property key="api-country" value="#[message.inboundProperties['api-country'] != null ? message.inboundProperties['api-country'] : &quot;&quot;]"/>
+                            <add-message-property key="api-organisation" value="#[message.inboundProperties['api-organisation'] != null ? message.inboundProperties['api-organisation'] : &quot;&quot;]"/>
+                            <add-message-property key="Authorization" value="#[flowVars.StoredTokenFromInboundHeader]"/>
+                        </message-properties-transformer>
+                        <http:request config-ref="HTTP_Oauth_Configuration" path="${http.oauth2v2.validate.path}" method="GET" doc:name="get-validate-from-oauth2v2">
+                            <http:success-status-code-validator values="200,400"/>
+                        </http:request>
+                        <choice doc:name="Choice">
+                            <when expression="#[message.inboundProperties['http.status']==&quot;200&quot;]">
+                                <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+                                <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="JSON to Object"/>
+                                <set-variable variableName="AllowedTransaction" value="#[new ArrayList(Arrays.asList(payload.scope.split(&quot; &quot;))).containsAll(flowVars.RequiredScopes)]" doc:name="set-var-AllowedTransaction"/>
+                                <choice doc:name="Choice">
+                                    <when expression="#[flowVars.AllowedTransaction==&quot;true&quot;]">
+                                        <set-payload value="#[&quot;Oauth token validation passed.&quot;]" doc:name="Set Success Message"/>
+                                    </when>
+                                    <otherwise>
+                                        <scripting:component doc:name="Groovy">
+                                            <scripting:script engine="Groovy"><![CDATA[throw new org.apache.commons.httpclient.auth.InvalidCredentialsException("The token does not contain the required scope(s).");]]></scripting:script>
+                                        </scripting:component>
+                                    </otherwise>
+                                </choice>
+                            </when>
+                            <otherwise>
+                                <scripting:component doc:name="Groovy">
+                                    <scripting:script engine="Groovy"><![CDATA[throw new org.apache.commons.httpclient.auth.InvalidCredentialsException("Invalid Token");]]></scripting:script>
+                                </scripting:component>
+                            </otherwise>
+                        </choice>
+                    </when>
+                    <otherwise>
+                        <scripting:component doc:name="Groovy">
+                            <scripting:script engine="Groovy"><![CDATA[throw new java.lang.IllegalArgumentException("Scopes have not been defined in the properties file.")]]></scripting:script>
+                        </scripting:component>
+                    </otherwise>
+                </choice>
+            </when>
+            <when expression="#[flowVars.ExecuteOauthTokenValidation==&quot;false&quot;]">
+                <set-payload value="#[&quot;Oauth token validation skipped.&quot;]" doc:name="Set Payload"/>
+                <logger message="#[&quot;Oauth token validation skipped. &quot;]" level="INFO" doc:name="Logger"/>
+            </when>
+            <otherwise>
+                <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[throw new java.lang.IllegalArgumentException("The oauth token is not present in the header")]]></scripting:script>
+                </scripting:component>
+            </otherwise>
+        </choice>
+
+    </sub-flow>
+</mule>

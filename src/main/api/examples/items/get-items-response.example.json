@@ -1,0 +1,15 @@
+{
+    "size": "2",
+    "items": [
+        {
+            "item": {
+                "name": "this is an item 1",
+                "value": "this is value for item 1"
+            },
+            "item": {
+                "name": "this is an item 2",
+                "value": "this is value for item 2"
+            }
+        }
+    ]
+}

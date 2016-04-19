@@ -1,0 +1,10 @@
+
+queryParameters:
+  startPage:
+    description: The starting page for the search
+    required: true
+    type: integer
+  numRecords:
+    description: The number of records to return within the page
+    required: true
+    type: integer

@@ -1,0 +1,10 @@
+
+queryParameters:
+  dateFrom:
+    description: The start of the date range
+    required: true
+    type: date
+  dateTo:
+    description: The end of the date range
+    required: true
+    type: date
